@@ -1,0 +1,73 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 11, 14, 20;
+  --background-end-rgb: 0, 0, 0;
+}
+
+body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-start-rgb));
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Utility */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+
+@import "tailwindcss";
+
+@theme {
+  /* Branding Colors */
+  --color-brand-purple: #a855f7;
+  --color-brand-neon: #2dd4bf;
+  --color-dark-bg: #0b0e14;
+
+  /* Custom Gradients */
+  --background-image-purple-gradient: linear-gradient(
+    to right,
+    #7e22ce,
+    #a855f7
+  );
+
+  /* Animation for the Carousel */
+  --animate-carousel: scroll 20s linear infinite;
+
+  @keyframes scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+}
+
+/* Base Body Styles */
+@layer base {
+  body {
+    background-color: var(--color-dark-bg);
+    color: white;
+    font-family: "Plus Jakarta Sans", sans-serif;
+  }
+}
+
+/* Glassmorphism Utility Class */
+@utility glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}

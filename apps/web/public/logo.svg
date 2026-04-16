@@ -1,0 +1,19 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="premiumGold" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E1BF7D"/>
+      <stop offset="50%" stop-color="#C69E58"/>
+      <stop offset="100%" stop-color="#8C6D33"/>
+    </linearGradient>
+  </defs>
+  
+  <circle cx="50" cy="50" r="48" stroke="url(#premiumGold)" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.3"/>
+  
+  <path d="M50 20C38 20 28 28 28 38V80C28 72 38 66 50 66C62 66 72 72 72 80V38C72 28 62 20 50 20Z" fill="url(#premiumGold)"/>
+  
+  <path d="M35 50C35 40 65 40 65 50C65 60 35 60 35 50Z" stroke="#1E3A8A" stroke-width="3" stroke-linecap="round"/>
+  
+  <text x="50" y="55" text-anchor="middle" font-family="Verdana" font-size="18" font-weight="bold" fill="#1E3A8A">AL</text>
+  
+  <circle cx="50" cy="72" r="3" fill="#1E3A8A"/>
+</svg>
