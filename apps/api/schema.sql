@@ -1,16 +1,23 @@
+-- ============================================
+-- Apna Library - Database Schema
+-- Safe to run multiple times (idempotent)
+-- ============================================
+
+-- 1. Students Table
 CREATE TABLE IF NOT EXISTS students (
-  id TEXT PRIMARY KEY,       -- This will be the UID from Supabase
+  id TEXT PRIMARY KEY,
   full_name TEXT NOT NULL,
   mobile_number TEXT UNIQUE,
+  parent_mobile TEXT,
+  profile_picture TEXT,
+  course TEXT,
+  status TEXT DEFAULT 'pending',
+  total_fees INTEGER DEFAULT 0,
+  paid_fees INTEGER DEFAULT 0,
   seat_assigned INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- 1. Update Students Table
-ALTER TABLE students ADD COLUMN status TEXT DEFAULT 'pending'; -- pending, approved, blocked
-ALTER TABLE students ADD COLUMN total_fees INTEGER DEFAULT 0;
-ALTER TABLE students ADD COLUMN paid_fees INTEGER DEFAULT 0;
 
 -- 2. Attendance Table
 CREATE TABLE IF NOT EXISTS attendance (
@@ -29,3 +36,8 @@ CREATE TABLE IF NOT EXISTS blogs (
   author TEXT DEFAULT 'Admin',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_attendance_student ON attendance(student_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date);
+CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);

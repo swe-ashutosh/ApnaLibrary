@@ -1,18 +1,22 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "api",
+  "name": "apna-library-api",
   "main": "src/index.ts",
-  "compatibility_date": "2026-04-14", // Added missing comma here
+  "compatibility_date": "2026-04-14",
   "compatibility_flags": [
     "nodejs_compat"
   ],
   "d1_databases": [
     {
-      "binding": "DB", 
+      "binding": "DB",
       "database_name": "apna-library-db",
-      "database_id": "52357836-d246-4416-83e0-1fcdc29226ac" 
+      "database_id": "52357836-d246-4416-83e0-1fcdc29226ac"
     }
   ],
+  "vars": {
+    "ALLOWED_ORIGIN": "http://localhost:3000",
+    "JWT_SECRET": "local_dev_secret_123"
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
