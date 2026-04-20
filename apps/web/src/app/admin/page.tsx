@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
   const [feesEdit, setFeesEdit] = useState<any>(null);
   const [scanResult, setScanResult] = useState<string | null>(null);
+  const lastScannedRef = React.useRef<string | null>(null);
 
   // Settings state
   const [settingsEmail, setSettingsEmail] = useState("");
@@ -154,7 +155,8 @@ export default function AdminDashboard() {
   };
 
   const handleScanSuccess = useCallback(async (decodedText: string) => {
-    if (scanResult === decodedText) return;
+    if (lastScannedRef.current === decodedText) return;
+    lastScannedRef.current = decodedText;
     setScanResult(decodedText);
     try {
       const res = await fetch(`${API_URL}/api/admin/scan-qr`, {
@@ -165,17 +167,17 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) {
         showToast(data.error || "Invalid QR", "error");
-        setTimeout(() => setScanResult(null), 3000);
+        setTimeout(() => { lastScannedRef.current = null; setScanResult(null); }, 3000);
         return;
       }
       showToast(data.message || "Attendance marked via QR!");
       fetchData();
-      setTimeout(() => setScanResult(null), 3000);
+      setTimeout(() => { lastScannedRef.current = null; setScanResult(null); }, 3000);
     } catch {
       showToast("Scan API Error", "error");
-      setTimeout(() => setScanResult(null), 3000);
+      setTimeout(() => { lastScannedRef.current = null; setScanResult(null); }, 3000);
     }
-  }, [scanResult, fetchData]);
+  }, [fetchData]);
 
   useEffect(() => {
     if (activeTab === "attendance") {
