@@ -18,15 +18,26 @@ export default function LoginPage() {
 
   const checkUserStatus = async (user: any) => {
     try {
-      const response = await fetch(`${API_URL}/api/user-status/${user.id}`, { cache: "no-store" });
-      if (!response.ok) throw new Error("Could not fetch user status. It might be a network or CORS issue.");
-      const statusResult = await response.json();
+      // Append timestamp to completely bust browser cache, otherwise it remembers "pending"
+      const response = await fetch(`${API_URL}/api/user-status/${user.id}?t=${Date.now()}`, { cache: "no-store" });
+      
+      let statusResult;
+      if (response.status === 404) {
+        statusResult = { status: "not_found" };
+      } else if (!response.ok) {
+        throw new Error("Could not fetch user status. It might be a network or CORS issue.");
+      } else {
+        statusResult = await response.json();
+      }
 
       if (statusResult.status === "approved") {
         router.push("/dashboard");
       } else if (statusResult.status === "blocked") {
         await supabase.auth.signOut();
         setError("Your account has been blocked. Please contact the library manager.");
+      } else if (statusResult.status === "not_found") {
+        await supabase.auth.signOut();
+        setError("Account not found. Please sign up with this email/phone first.");
       } else {
         await supabase.auth.signOut();
         setError("Your account is pending admin approval. Please wait or contact the library manager.");

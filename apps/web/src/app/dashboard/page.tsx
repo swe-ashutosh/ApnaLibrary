@@ -96,7 +96,7 @@ export default function Dashboard() {
 
       try {
         // Fetch student profile from API
-        const profileRes = await fetch(`${API_URL}/api/student/${user.id}`, { cache: 'no-store' });
+        const profileRes = await fetch(`${API_URL}/api/student/${user.id}?t=${Date.now()}`, { cache: 'no-store' });
         if (profileRes.ok) {
           const profileData = await profileRes.json();
           setStudent(profileData);
