@@ -19,6 +19,41 @@ export default function AdminDashboard() {
   const [feesEdit, setFeesEdit] = useState<any>(null);
   const [scanResult, setScanResult] = useState<string | null>(null);
 
+  // Settings state
+  const [settingsEmail, setSettingsEmail] = useState("");
+  const [settingsPassword, setSettingsPassword] = useState("");
+  const [settingsLoading, setSettingsLoading] = useState(false);
+
+  useEffect(() => {
+    if (adminUser?.email) setSettingsEmail(adminUser.email);
+  }, [adminUser]);
+
+  const updateAdminCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSettingsLoading(true);
+    try {
+      const updates: any = {};
+      if (settingsEmail && settingsEmail !== adminUser.email) updates.email = settingsEmail;
+      if (settingsPassword) updates.password = settingsPassword;
+
+      if (Object.keys(updates).length === 0) {
+        showToast("No changes made");
+        setSettingsLoading(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser(updates);
+      if (error) throw error;
+      
+      showToast("Credentials updated successfully. You may need to log in again.");
+      setSettingsPassword("");
+    } catch (err: any) {
+      showToast(err.message || "Failed to update credentials", "error");
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
   const showToast = (msg: string, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
@@ -65,6 +100,20 @@ export default function AdminDashboard() {
       fetchData();
     } catch {
       showToast("Failed to update status", "error");
+    }
+  };
+
+  const deleteStudent = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this student? This action cannot be undone.")) return;
+    try {
+      const res = await fetch(`${API_URL}/api/admin/delete-student/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      showToast("Student deleted successfully");
+      fetchData();
+    } catch {
+      showToast("Failed to delete student", "error");
     }
   };
 
@@ -192,6 +241,7 @@ export default function AdminDashboard() {
     { id: "attendance", label: "📋 Attendance" },
     { id: "fees", label: "💰 Fees" },
     { id: "blog", label: "📝 Blog" },
+    { id: "settings", label: "⚙️ Settings" },
   ];
 
   return (
@@ -335,6 +385,12 @@ export default function AdminDashboard() {
                             >
                               {s.status === "blocked" ? "🔓 Unblock" : "🚫 Block"}
                             </button>
+                            <button
+                              onClick={() => deleteStudent(s.id)}
+                              className="bg-red-900/50 hover:bg-red-600 px-3 py-1 rounded-lg text-xs font-medium transition-all text-red-200 hover:text-white border border-red-500/30 hover:border-red-600"
+                            >
+                              🗑️ Delete
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -373,6 +429,12 @@ export default function AdminDashboard() {
                           className={`flex-1 py-2 rounded-lg text-xs font-medium ${s.status === "blocked" ? "bg-blue-600" : "bg-red-600"}`}
                         >
                           {s.status === "blocked" ? "Unblock" : "Block"}
+                        </button>
+                        <button
+                          onClick={() => deleteStudent(s.id)}
+                          className="flex-1 bg-red-900/50 text-red-200 border border-red-500/30 hover:bg-red-600 hover:text-white py-2 rounded-lg text-xs font-medium"
+                        >
+                          Delete
                         </button>
                       </div>
                     </div>
@@ -493,6 +555,33 @@ export default function AdminDashboard() {
                 </div>
                 <button type="submit" disabled={blogLoading} className="w-full bg-purple-gradient py-4 rounded-xl font-bold text-white hover:opacity-90 disabled:opacity-50 transition-all">
                   {blogLoading ? "Publishing..." : "Publish Blog"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Settings */}
+        {activeTab === "settings" && (
+          <div className="p-4 md:p-8">
+            <h1 className="text-2xl md:text-3xl font-bold mb-6">Admin Settings</h1>
+            <form onSubmit={updateAdminCredentials} className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 max-w-xl">
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-300">Admin Email</label>
+                  <input type="email" value={settingsEmail} onChange={(e) => setSettingsEmail(e.target.value)} placeholder="admin@example.com" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500 transition-all" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-300">New Password (leave blank to keep current)</label>
+                  <input type="password" value={settingsPassword} onChange={(e) => setSettingsPassword(e.target.value)} placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500 transition-all" />
+                </div>
+                <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl">
+                  <p className="text-xs text-yellow-400 font-medium leading-relaxed">
+                    ⚠️ Changing your credentials will log out all active sessions. You will need to log in again with the new credentials.
+                  </p>
+                </div>
+                <button type="submit" disabled={settingsLoading} className="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-bold text-white hover:opacity-90 disabled:opacity-50 transition-all">
+                  {settingsLoading ? "Updating..." : "Save Credentials"}
                 </button>
               </div>
             </form>

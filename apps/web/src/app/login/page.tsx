@@ -11,6 +11,32 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+
+  const checkUserStatus = async (user: any) => {
+    try {
+      const response = await fetch(`${API_URL}/api/user-status/${user.id}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Could not fetch user status. It might be a network or CORS issue.");
+      const statusResult = await response.json();
+
+      if (statusResult.status === "approved") {
+        router.push("/dashboard");
+      } else if (statusResult.status === "blocked") {
+        await supabase.auth.signOut();
+        setError("Your account has been blocked. Please contact the library manager.");
+      } else {
+        await supabase.auth.signOut();
+        setError("Your account is pending admin approval. Please wait or contact the library manager.");
+      }
+    } catch (err: any) {
+      await supabase.auth.signOut();
+      setError(err.message || "Failed to verify account status.");
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -29,24 +55,41 @@ export default function LoginPage() {
         return;
       }
 
-      // 3. Check Approval Status in D1 via Hono
-      const response = await fetch(
-        `${API_URL}/api/user-status/${authData.user.id}`,
-        { cache: 'no-store' }
-      );
-      const statusResult = await response.json();
-
-      if (statusResult.status === "approved") {
-        router.push("/dashboard");
-      } else if (statusResult.status === "blocked") {
-        await supabase.auth.signOut();
-        setError("Your account has been blocked. Please contact the library manager.");
-      } else {
-        await supabase.auth.signOut();
-        setError("Your account is pending admin approval. Please wait or contact the library manager.");
-      }
+      await checkUserStatus(authData.user);
     } catch (err: any) {
       setError(err.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ phone });
+      if (error) throw error;
+      setOtpSent(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({ phone, token: otp, type: "sms" });
+      if (error) throw error;
+      if (data.user) {
+        await checkUserStatus(data.user);
+      }
+    } catch (err: any) {
+      setError(err.message || "Invalid OTP.");
     } finally {
       setLoading(false);
     }
@@ -82,8 +125,24 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
+        <div className="flex bg-white/5 rounded-xl p-1 mb-6">
+          <button
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${loginMethod === "email" ? "bg-brandPurple text-white" : "text-gray-400 hover:text-white"}`}
+            onClick={() => { setLoginMethod("email"); setError(""); }}
+          >
+            Email
+          </button>
+          <button
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${loginMethod === "phone" ? "bg-brandPurple text-white" : "text-gray-400 hover:text-white"}`}
+            onClick={() => { setLoginMethod("phone"); setError(""); }}
+          >
+            Phone
+          </button>
+        </div>
+
+        {loginMethod === "email" ? (
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
             <label className="block text-xs font-semibold text-gray-400 uppercase mb-2">
               Email
             </label>
@@ -109,14 +168,66 @@ export default function LoginPage() {
               required
             />
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-purple-gradient py-4 rounded-xl font-bold text-white hover:opacity-90 transition-all disabled:opacity-50"
-          >
-            {loading ? "Checking..." : "Login"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-purple-gradient py-4 rounded-xl font-bold text-white hover:opacity-90 transition-all disabled:opacity-50"
+            >
+              {loading ? "Checking..." : "Login"}
+            </button>
+          </form>
+        ) : (
+          !otpSent ? (
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-2">Phone Number</label>
+                <input
+                  type="tel"
+                  placeholder="+919876543210"
+                  value={phone}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-brandPurple transition-all"
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-purple-gradient py-4 rounded-xl font-bold text-white hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                {loading ? "Sending..." : "Send OTP"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-2">Enter OTP</label>
+                <input
+                  type="text"
+                  placeholder="123456"
+                  value={otp}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-brandPurple transition-all text-center tracking-widest text-lg"
+                  onChange={(e) => setOtp(e.target.value)}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-green-500 hover:bg-green-600 py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50"
+              >
+                {loading ? "Verifying..." : "Verify & Login"}
+              </button>
+              <button
+                type="button"
+                className="w-full text-xs text-gray-400 hover:text-white"
+                onClick={() => setOtpSent(false)}
+              >
+                Try a different number
+              </button>
+            </form>
+          )
+        )}
 
         {/* Divider */}
         <div className="relative my-6">

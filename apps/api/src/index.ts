@@ -24,6 +24,10 @@ app.use('/*', cors({
     if (origin?.startsWith('http://localhost')) {
       return origin;
     }
+    // Permissive fallback to allow deployed frontend
+    if (origin) {
+      return origin;
+    }
     return origins[0];
   },
   allowMethods: ['POST', 'GET', 'PUT', 'DELETE', 'OPTIONS'],
@@ -135,6 +139,23 @@ app.get('/api/admin/students', async (c) => {
   } catch (error: any) {
     console.error('Students list error:', error);
     return c.json({ error: error.message }, 500);
+  }
+});
+
+// Delete Student
+app.delete('/api/admin/delete-student/:id', async (c) => {
+  try {
+    const studentId = c.req.param('id');
+    
+    // Delete attendance records first (foreign key)
+    await c.env.DB.prepare("DELETE FROM attendance WHERE student_id = ?").bind(studentId).run();
+    // Delete student
+    await c.env.DB.prepare("DELETE FROM students WHERE id = ?").bind(studentId).run();
+    
+    return c.json({ success: true, message: 'Student deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete student error:', error);
+    return c.json({ success: false, error: error.message }, 500);
   }
 });
 
